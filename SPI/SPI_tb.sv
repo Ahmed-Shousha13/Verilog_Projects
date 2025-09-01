@@ -28,12 +28,10 @@ task automatic send_slave(ref packet info,input MODE op);
   bit [2:0] i;//counter to keep track of the Nth bit sent
   i = 3'b111;
   /*switch over to the state where I would be reading/writing*/
-  $display("yes bey5o4 eltask");
   if(op == WRITE || op == WRITE_A)begin
     cb.MOSI <= 1'b0;end
 else if(op == READ || op == READ_A)begin
     cb.MOSI <= 1'b1;end
-    $display("before negedge");
     @(negedge clk);// a clock cycle to transition over to the next state (read or write)
 
 /*send the command*/
@@ -60,7 +58,6 @@ task automatic receive_slave(ref bit[7:0] data_read);
   @(negedge clk);
   for(int i=7;i>=0;i--) begin
     @(negedge clk);
-    $display("MISO:%b",cb.MISO,"i:%0d",i);
     data_read[i] = cb.MISO; 
   end
 endtask
@@ -96,7 +93,6 @@ inter.cb.rst <= 1'b1;//de-asserting the reset
 
 /*send all packets*/
 for(int i =0;i <numpackets;i++) begin
-  $display("it gets to this part of the code well");
   @(negedge inter.clk);//wait for a negative edge
   inter.cb.SS_n <= 1'b0;//go to state 1
   @(negedge inter.clk);//wait for a negative edge (now at state 1)
@@ -136,9 +132,9 @@ end
 /*now to check for all the results*/
 foreach(scoreboard[i]) begin
   assert(scoreboard[i] == resultboard[i])
-  $display("scoreboard[%0d]: ",i,scoreboard[i],"resultboard[%0d]: ",i,resultboard[i],"valid");
+  $display("scoreboard[%0d]:%0d",i,scoreboard[i]," resultboard[%0d]:%0d",i,resultboard[i],"\ntest case passed");
   else
-  $display("scoreboard[%0d]: ",i,scoreboard[i],"resultboard[%0d]: ",i,resultboard[i],"invalid");
+  $display("scoreboard[%0d]:%0d",i,scoreboard[i]," resultboard[%0d]:%0d",i,resultboard[i],"\ntest case failed");
   end
   //end of logic checking for values
   $finish;
@@ -163,6 +159,6 @@ module SPI_tb_top();
   /*instantiations*/
   clk_gen generator(clk);
   SPI_int myint(clk);
-  SPI_tb tb(myint.tb);
+  SPI_tb #(.numpackets(100))tb (myint.tb);
   SPI_wrapper tb_wrapper(.clk(clk), .rst(myint.rst), .SS_n(myint.SS_n), .MOSI(myint.MOSI), .MISO(myint.MISO));
-endmodule 
+endmodule
